@@ -1,0 +1,5 @@
+com\fraud\merchant\entity\Merchant.class
+com\fraud\merchant\entity\Merchant$MerchantBuilder.class
+com\fraud\merchant\controller\MerchantController.class
+com\fraud\merchant\MerchantServiceApplication.class
+com\fraud\merchant\repository\MerchantRepository.class
