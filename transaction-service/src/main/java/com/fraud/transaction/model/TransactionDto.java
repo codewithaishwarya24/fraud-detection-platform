@@ -25,5 +25,5 @@ public class TransactionDto {
     private String location;
     private LocalDateTime transactionTime;
     private LocalDateTime createdAt;
-    
+
 }
