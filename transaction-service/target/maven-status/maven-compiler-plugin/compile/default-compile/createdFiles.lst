@@ -1,5 +1,9 @@
-com\fraud\transaction\entity\Transaction$TransactionBuilder.class
 com\fraud\transaction\repository\TransactionRepository.class
 com\fraud\transaction\TransactionServiceApplication.class
 com\fraud\transaction\controller\TransactionController.class
+com\fraud\transaction\service\TransactionService.class
+com\fraud\transaction\service\TransactionMapper.class
+com\fraud\transaction\model\TransactionDto.class
+com\fraud\transaction\entity\Transaction$TransactionBuilder.class
 com\fraud\transaction\entity\Transaction.class
+com\fraud\transaction\service\TransactionMapperImpl.class
