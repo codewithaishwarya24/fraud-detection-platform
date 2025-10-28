@@ -1,14 +1,39 @@
 package com.fraud.transaction.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.fraud.transaction.entity.Transaction;
+import com.fraud.transaction.repository.TransactionRepository;
+import com.fraud.transaction.service.TransactionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/transactions")
 public class TransactionController {
+
+    @Autowired
+    public TransactionService service;
+
     @GetMapping("/health")
     public String health() {
         return "Transaction service running OK";
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable("id") Long id){
+        Optional<Transaction> optionalTransaction = service.getTransactionById(id);
+        return optionalTransaction.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Transaction> updateTransaction(
+            @PathVariable("id") Long id,
+            @RequestBody Transaction updatedTransaction) {
+
+        return service.updateTransaction(id, updatedTransaction)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
