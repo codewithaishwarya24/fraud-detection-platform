@@ -18,18 +18,17 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
-    @Autowired
-    public TransactionRepository repository;
+
+    private final TransactionRepository transactionRepository;
 
     private final TransactionMapper transactionMapper = Mappers.getMapper(TransactionMapper.class);
 
     public Optional<Transaction> getTransactionById(Long id) {
-        return repository.findById(id);
+        return transactionRepository.findById(id);
     }
 
-    private final TransactionRepository transactionRepository;
     public Optional<Transaction> updateTransaction(Long id, Transaction updatedTransaction) {
-        return repository.findById(id)
+        return transactionRepository.findById(id)
                 .map(existing -> {
                     if (updatedTransaction.getTransactionId() != null)
                         existing.setTransactionId(updatedTransaction.getTransactionId());
@@ -51,14 +50,8 @@ public class TransactionService {
                     existing.setLocation(updatedTransaction.getLocation());
                     existing.setTransactionTime(updatedTransaction.getTransactionTime());
                     existing.setCreatedAt(updatedTransaction.getCreatedAt());
-    // PATCH: Flag a transaction as suspicious
-    public Transaction flagTransaction(Long id, String comment) {
-        Transaction txn = transactionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + id));
 
-        txn.setIsFlagged(true);
-        return transactionRepository.save(txn);
-                    return repository.save(existing);
+                    return transactionRepository.save(existing);
                 });
     }
 
@@ -67,22 +60,35 @@ public class TransactionService {
             Transaction transaction = transactionMapper.mapTransactionDtoToTransaction(transactionDto);
             transaction.setCreatedAt(LocalDateTime.now());
             transaction.setTransactionTime(LocalDateTime.now());
-            repository.save(transaction);
+            transactionRepository.save(transaction);
             return new ResponseEntity<>("Transaction created successfully", HttpStatus.CREATED);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
         return new ResponseEntity<>("Failed to create transaction", HttpStatus.BAD_REQUEST);
-    // GET: All flagged transactions
+    }
+
+    public ResponseEntity<List<TransactionDto>> getAllTransaction() {
+        List<Transaction> transactionList = transactionRepository.findAll();
+        return new ResponseEntity<>(transactionMapper.toTransactionDtoList(transactionList), HttpStatus.OK);
+    }
+
+    // Flag a transaction as suspicious
+    public Transaction flagTransaction(Long id, String comment) {
+        Transaction txn = transactionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + id));
+        txn.setIsFlagged(true);
+        return transactionRepository.save(txn);
+    }
+
+    //All flagged transactions
     public List<Transaction> getFlaggedTransactions() {
         return transactionRepository.findByFlaggedTrue();
     }
 
-    // GET: All transactions by merchant
-    public List<Transaction> getTransactionsByMerchant(Long merchantId) {
-        return transactionRepository.findByMerchantId(merchantId);
-    public ResponseEntity<List<TransactionDto>> getAllTransaction() {
-        List<Transaction> transactionList = repository.findAll();
-        return new ResponseEntity<>(transactionMapper.toTransactionDtoList(transactionList), HttpStatus.OK);
-    }
+    //All transactions by merchant
+    public List<Transaction> getTransactionsByMerchant(Long merchantId){
+                return transactionRepository.findByMerchantId(merchantId);
+            }
+
 }
