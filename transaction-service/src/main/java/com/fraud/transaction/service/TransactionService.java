@@ -83,11 +83,11 @@ public class TransactionService {
 
     //All flagged transactions
     public List<Transaction> getFlaggedTransactions() {
-        return transactionRepository.findByFlaggedTrue();
+        return transactionRepository.findByIsFlaggedTrue();
     }
 
     //All transactions by merchant
-    public List<Transaction> getTransactionsByMerchant(Long merchantId){
+    public List<Transaction> getTransactionsByMerchant(String merchantId){
                 return transactionRepository.findByMerchantId(merchantId);
             }
 

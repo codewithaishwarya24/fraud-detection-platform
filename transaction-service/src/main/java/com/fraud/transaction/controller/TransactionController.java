@@ -14,8 +14,11 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/transactions")
-@RequiredArgsConstructor
 public class TransactionController {
+
+    public TransactionController(TransactionService transactionService) {
+        this.transactionService = transactionService;
+    }
 
     private final TransactionService transactionService;
 
@@ -66,7 +69,7 @@ public class TransactionController {
 
     // GET /api/transactions/merchant/{merchantId}
     @GetMapping("/merchant/{merchantId}")
-    public ResponseEntity<List<Transaction>> getByMerchant(@PathVariable Long merchantId) {
+    public ResponseEntity<List<Transaction>> getByMerchant(@PathVariable String merchantId) {
         return ResponseEntity.ok(transactionService.getTransactionsByMerchant(merchantId));
     }
 
