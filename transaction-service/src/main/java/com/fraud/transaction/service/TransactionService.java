@@ -1,10 +1,12 @@
 package com.fraud.transaction.service;
 
 import com.fraud.transaction.entity.Transaction;
+import com.fraud.transaction.model.FlagTransactionRequest;
 import com.fraud.transaction.model.TransactionDto;
 import com.fraud.transaction.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
@@ -73,22 +76,37 @@ public class TransactionService {
         return new ResponseEntity<>(transactionMapper.toTransactionDtoList(transactionList), HttpStatus.OK);
     }
 
-    // Flag a transaction as suspicious
-    public Transaction flagTransaction(Long id, String comment) {
+    public Transaction flagTransaction(Long id, FlagTransactionRequest request) {
         Transaction txn = transactionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + id));
+
         txn.setIsFlagged(true);
+        txn.setFlagReason(request.getComment());
+        txn.setUpdatedAt(LocalDateTime.now());
+        txn.setFlaggedAt(LocalDateTime.now());
+        txn.setFlaggedBy("system");
+
         return transactionRepository.save(txn);
     }
 
-    //All flagged transactions
     public List<Transaction> getFlaggedTransactions() {
-        return transactionRepository.findByIsFlaggedTrue();
+        List<Transaction> flaggedTransactions = transactionRepository.findByIsFlaggedTrue();
+        if (flaggedTransactions.isEmpty()) {
+            log.info("No flagged transactions found.");
+        }
+        return flaggedTransactions;
     }
 
-    //All transactions by merchant
-    public List<Transaction> getTransactionsByMerchant(String merchantId){
-                return transactionRepository.findByMerchantId(merchantId);
-            }
+    public List<Transaction> getTransactionsByMerchant(String merchantId) {
+        if (merchantId == null || merchantId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Merchant ID must not be null or empty.");
+        }
+        
+        List<Transaction> merchantTransactions = transactionRepository.findByMerchantId(merchantId);
+        if (merchantTransactions.isEmpty()) {
+            log.info("No transactions found for merchant ID: {}", merchantId);
+        }
+        return merchantTransactions;
+    }
 
 }

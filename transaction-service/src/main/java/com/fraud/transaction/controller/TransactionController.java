@@ -2,8 +2,10 @@ package com.fraud.transaction.controller;
 
 
 import com.fraud.transaction.entity.Transaction;
+import com.fraud.transaction.model.FlagTransactionRequest;
 import com.fraud.transaction.model.TransactionDto;
 import com.fraud.transaction.service.TransactionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -52,22 +54,18 @@ public class TransactionController {
         return transactionService.getAllTransaction();
     }
 
-    // PATCH /api/transactions/{id}/flag
     @PatchMapping("/{id}/flag")
     public ResponseEntity<Transaction> flagTransaction(@PathVariable Long id,
-                                                       @RequestBody Map<String, String> request) {
-        String comment = request.get("comment");
-        Transaction updated = transactionService.flagTransaction(id, comment);
+                                                       @Valid @RequestBody FlagTransactionRequest request) {
+        Transaction updated = transactionService.flagTransaction(id, request);
         return ResponseEntity.ok(updated);
     }
 
-    // GET /api/transactions/flagged
     @GetMapping("/flagged")
     public ResponseEntity<List<Transaction>> getFlaggedTransactions() {
         return ResponseEntity.ok(transactionService.getFlaggedTransactions());
     }
 
-    // GET /api/transactions/merchant/{merchantId}
     @GetMapping("/merchant/{merchantId}")
     public ResponseEntity<List<Transaction>> getByMerchant(@PathVariable String merchantId) {
         return ResponseEntity.ok(transactionService.getTransactionsByMerchant(merchantId));
