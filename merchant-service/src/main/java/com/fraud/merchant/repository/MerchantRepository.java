@@ -10,5 +10,5 @@ import java.util.List;
 public interface MerchantRepository extends JpaRepository<Merchant, Long> {
     boolean existsByMerchantId(String merchantId);
 
-    List<Merchant> findMerchantsById(Long id);
+    Merchant findMerchantsByMerchantId(String merchantId);
 }

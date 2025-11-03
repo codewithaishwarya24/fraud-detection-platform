@@ -15,13 +15,16 @@ import java.util.List;
 @Service
 public class MerchantService {
     MerchantRepository merchantRepository;
+    public MerchantService(MerchantRepository merchantRepository) {
+        this.merchantRepository = merchantRepository;
+    }
     MerchantMapper merchantMapper = Mappers.getMapper(MerchantMapper.class);
 
     public ResponseEntity<String> createMerchant(MerchantDTO merchantDTO) {
         Merchant merchant = merchantMapper.mapMerchantDTOtoMerchant(merchantDTO);
 
         if (merchantRepository.existsByMerchantId(merchantDTO.getMerchantId())) {
-            throw new IllegalArgumentException("Merchant ID already exists");
+            return new ResponseEntity<>("Merchant ID already exists", HttpStatus.BAD_REQUEST);
         }
         merchant.setCreatedAt(LocalDateTime.now());
         merchant.setUpdatedAt(LocalDateTime.now());
@@ -30,7 +33,8 @@ public class MerchantService {
         return new ResponseEntity<>("Merchant created Successfully",HttpStatus.CREATED);
     }
 
-    public List<Merchant> getMerchantById(Long merchantId) {
-        return merchantRepository.findMerchantsById(merchantId);
+    public ResponseEntity<MerchantDTO> getMerchantById(String merchantId) {
+        return new ResponseEntity<>(merchantMapper.mapMerchantToMerchantDTO(
+                merchantRepository.findMerchantsByMerchantId(merchantId)), HttpStatus.OK);
     }
 }

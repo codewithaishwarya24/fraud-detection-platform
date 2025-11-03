@@ -6,8 +6,6 @@ import com.fraud.merchant.service.MerchantService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/merchants")
 public class MerchantController {
@@ -28,7 +26,7 @@ public class MerchantController {
     }
 
     @GetMapping("/{merchantId}")
-    public List<Merchant> getMerchantById(@PathVariable("merchantId") Long merchantId) {
+    public ResponseEntity<MerchantDTO> getMerchantById(@PathVariable("merchantId") String merchantId) {
         return merchantService.getMerchantById(merchantId);
     }
    }
