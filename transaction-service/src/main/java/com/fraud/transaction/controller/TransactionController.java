@@ -55,7 +55,7 @@ public class TransactionController {
     }
 
     @PatchMapping("/{id}/flag")
-    public ResponseEntity<Transaction> flagTransaction(@PathVariable Long id,
+    public ResponseEntity<Transaction> flagTransaction(@PathVariable("id") Long id,
                                                        @Valid @RequestBody FlagTransactionRequest request) {
         Transaction updated = transactionService.flagTransaction(id, request);
         return ResponseEntity.ok(updated);
@@ -67,7 +67,7 @@ public class TransactionController {
     }
 
     @GetMapping("/merchant/{merchantId}")
-    public ResponseEntity<List<Transaction>> getByMerchant(@PathVariable String merchantId) {
+    public ResponseEntity<List<Transaction>> getByMerchant(@PathVariable("merchantId") String merchantId) {
         return ResponseEntity.ok(transactionService.getTransactionsByMerchant(merchantId));
     }
 
