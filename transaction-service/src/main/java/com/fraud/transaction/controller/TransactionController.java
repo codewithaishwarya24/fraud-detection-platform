@@ -51,10 +51,10 @@ public class TransactionController {
         return transactionService.getAllTransaction();
     }
 
-    @PatchMapping("/{id}/flag")
-    public ResponseEntity<Transaction> flagTransaction(@PathVariable("id") Long id,
+    @PatchMapping("/{transactionId}/flag")
+    public ResponseEntity<Transaction> flagTransaction(@PathVariable("transactionId") String transactionId,
                                                        @Valid @RequestBody FlagTransactionRequest request) {
-        Transaction updated = transactionService.flagTransaction(id, request);
+        Transaction updated = transactionService.flagTransaction(transactionId, request);
         return ResponseEntity.ok(updated);
     }
 
