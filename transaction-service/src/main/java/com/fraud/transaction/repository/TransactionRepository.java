@@ -5,6 +5,7 @@ import com.fraud.transaction.entity.Transaction;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
@@ -13,6 +14,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
 
     List<Transaction> findByMerchantId(String merchantId);
+
+    Transaction findByTransactionId(String transactionId);
 
 
 }
