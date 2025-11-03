@@ -29,19 +29,16 @@ public class TransactionController {
         return "Transaction service running OK";
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Transaction> getTransactionById(@PathVariable("id") Long id) {
-        Optional<Transaction> optionalTransaction = transactionService.getTransactionById(id);
-        return optionalTransaction.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    @GetMapping("/{transactionId}")
+    public ResponseEntity<TransactionDto> getTransactionById(@PathVariable("transactionId") String transactionId) {
+        return transactionService.getTransactionById(transactionId);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Transaction> updateTransaction(@PathVariable("id") Long id,
-                                                         @RequestBody Transaction updatedTransaction) {
+    @PutMapping("/{transactionId}")
+    public ResponseEntity<TransactionDto> updateTransaction(@PathVariable("transactionId") String transactionId,
+                                                         @RequestBody TransactionDto updatedTransaction) {
 
-        return transactionService.updateTransaction(id, updatedTransaction)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return transactionService.updateTransaction(transactionId, updatedTransaction);
     }
 
     @PostMapping("/create")

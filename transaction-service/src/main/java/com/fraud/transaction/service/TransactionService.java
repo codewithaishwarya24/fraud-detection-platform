@@ -26,16 +26,17 @@ public class TransactionService {
 
     private final TransactionMapper transactionMapper = Mappers.getMapper(TransactionMapper.class);
 
-    public Optional<Transaction> getTransactionById(Long id) {
-        return transactionRepository.findById(id);
+    public ResponseEntity<TransactionDto> getTransactionById(String transId) {
+        Transaction transaction = transactionRepository.findByTransactionId(transId);
+        if (null!=transaction)
+            return new ResponseEntity<>(transactionMapper.mapTransactionToTransactionDto(transaction), HttpStatus.OK);
+        else
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    public Optional<Transaction> updateTransaction(Long id, Transaction updatedTransaction) {
-        return transactionRepository.findById(id)
-                .map(existing -> {
-                    if (updatedTransaction.getTransactionId() != null)
-                        existing.setTransactionId(updatedTransaction.getTransactionId());
-
+    public ResponseEntity<TransactionDto> updateTransaction(String transactionId, TransactionDto updatedTransaction) {
+        Transaction existing = transactionRepository.findByTransactionId(transactionId);
+                if(null!=existing) {
                     existing.setAmount(updatedTransaction.getAmount());
                     existing.setCurrency(updatedTransaction.getCurrency());
                     existing.setMerchantId(updatedTransaction.getMerchantId());
@@ -53,9 +54,12 @@ public class TransactionService {
                     existing.setLocation(updatedTransaction.getLocation());
                     existing.setTransactionTime(updatedTransaction.getTransactionTime());
                     existing.setCreatedAt(updatedTransaction.getCreatedAt());
+                    transactionRepository.save(existing);
+                    return new ResponseEntity<>(transactionMapper.mapTransactionToTransactionDto(existing),HttpStatus.OK);
+                }
+                else
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-                    return transactionRepository.save(existing);
-                });
     }
 
     public ResponseEntity<String> createTransaction(TransactionDto transactionDto) {
