@@ -1,14 +1,14 @@
 package com.fraud.transaction.service;
 
 import com.fraud.transaction.entity.Transaction;
+import com.fraud.transaction.mapper.TransactionMapper;
 import com.fraud.transaction.model.FlagTransactionRequest;
-import com.fraud.transaction.model.TransactionDto;
+import com.fraud.transaction.dto.TransactionDto;
 import com.fraud.transaction.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -26,12 +26,12 @@ public class TransactionService {
 
     private final TransactionMapper transactionMapper = Mappers.getMapper(TransactionMapper.class);
 
-    public ResponseEntity<TransactionDto> getTransactionById(String transId) {
+    public TransactionDto getTransactionById(String transId) {
         Transaction transaction = transactionRepository.findByTransactionId(transId);
-        if (null!=transaction)
-            return new ResponseEntity<>(transactionMapper.mapTransactionToTransactionDto(transaction), HttpStatus.OK);
-        else
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        if (transaction == null) {
+            throw new EntityNotFoundException("Transaction not found with id: " + transId);
+        }
+        return transactionMapper.toDto(transaction);
     }
 
     public ResponseEntity<TransactionDto> updateTransaction(String transactionId, TransactionDto updatedTransaction) {
@@ -55,7 +55,7 @@ public class TransactionService {
                     existing.setTransactionTime(updatedTransaction.getTransactionTime());
                     existing.setCreatedAt(updatedTransaction.getCreatedAt());
                     transactionRepository.save(existing);
-                    return new ResponseEntity<>(transactionMapper.mapTransactionToTransactionDto(existing),HttpStatus.OK);
+                    return new ResponseEntity<>(transactionMapper.toDto(existing),HttpStatus.OK);
                 }
                 else
                     return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -64,7 +64,7 @@ public class TransactionService {
 
     public ResponseEntity<String> createTransaction(TransactionDto transactionDto) {
         try {
-            Transaction transaction = transactionMapper.mapTransactionDtoToTransaction(transactionDto);
+            Transaction transaction = transactionMapper.toEntity(transactionDto);
             transaction.setCreatedAt(LocalDateTime.now());
             transaction.setTransactionTime(LocalDateTime.now());
             transactionRepository.save(transaction);
@@ -77,7 +77,7 @@ public class TransactionService {
 
     public ResponseEntity<List<TransactionDto>> getAllTransaction() {
         List<Transaction> transactionList = transactionRepository.findAll();
-        return new ResponseEntity<>(transactionMapper.toTransactionDtoList(transactionList), HttpStatus.OK);
+        return new ResponseEntity<>(transactionMapper.toDtoList(transactionList), HttpStatus.OK);
     }
 
     public Transaction flagTransaction(String transactionId, FlagTransactionRequest request) {

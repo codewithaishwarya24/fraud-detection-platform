@@ -3,16 +3,13 @@ package com.fraud.transaction.controller;
 
 import com.fraud.transaction.entity.Transaction;
 import com.fraud.transaction.model.FlagTransactionRequest;
-import com.fraud.transaction.model.TransactionDto;
+import com.fraud.transaction.dto.TransactionDto;
 import com.fraud.transaction.service.TransactionService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -31,8 +28,10 @@ public class TransactionController {
 
     @GetMapping("/{transactionId}")
     public ResponseEntity<TransactionDto> getTransactionById(@PathVariable("transactionId") String transactionId) {
-        return transactionService.getTransactionById(transactionId);
+        TransactionDto dto = transactionService.getTransactionById(transactionId);
+        return ResponseEntity.ok(dto);
     }
+
 
     @PutMapping("/{transactionId}")
     public ResponseEntity<TransactionDto> updateTransaction(@PathVariable("transactionId") String transactionId,

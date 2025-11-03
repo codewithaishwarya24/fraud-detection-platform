@@ -12,7 +12,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByIsFlaggedTrue();
 
-
     List<Transaction> findByMerchantId(String merchantId);
 
     Transaction findByTransactionId(String transactionId);

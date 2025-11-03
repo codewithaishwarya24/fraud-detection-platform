@@ -1,4 +1,4 @@
-package com.fraud.transaction.model;
+package com.fraud.transaction.dto;
 
 import lombok.Data;
 
