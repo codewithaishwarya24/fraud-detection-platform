@@ -80,9 +80,9 @@ public class TransactionService {
         return new ResponseEntity<>(transactionMapper.toTransactionDtoList(transactionList), HttpStatus.OK);
     }
 
-    public Transaction flagTransaction(Long id, FlagTransactionRequest request) {
-        Transaction txn = transactionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + id));
+    public Transaction flagTransaction(String transactionId, FlagTransactionRequest request) {
+        Transaction txn = Optional.of(transactionRepository.findByTransactionId(transactionId))
+                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with transaction id: " + transactionId));
 
         txn.setIsFlagged(true);
         txn.setFlagReason(request.getComment());
