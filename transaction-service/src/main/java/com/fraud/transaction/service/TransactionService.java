@@ -80,7 +80,7 @@ public class TransactionService {
         return new ResponseEntity<>(transactionMapper.toTransactionDtoList(transactionList), HttpStatus.OK);
     }
 
-    public Transaction flagTransaction(String transactionId, FlagTransactionRequest request) {
+    public ResponseEntity<TransactionDto> flagTransaction(String transactionId, FlagTransactionRequest request) {
         Transaction txn = Optional.of(transactionRepository.findByTransactionId(transactionId))
                 .orElseThrow(() -> new EntityNotFoundException("Transaction not found with transaction id: " + transactionId));
 
@@ -90,18 +90,19 @@ public class TransactionService {
         txn.setFlaggedAt(LocalDateTime.now());
         txn.setFlaggedBy("system");
 
-        return transactionRepository.save(txn);
+        Transaction updatedTxn = transactionRepository.save(txn);
+        return new ResponseEntity<>(transactionMapper.mapTransactionToTransactionDto(updatedTxn),HttpStatus.OK);
     }
 
-    public List<Transaction> getFlaggedTransactions() {
+    public ResponseEntity<List<TransactionDto>> getFlaggedTransactions() {
         List<Transaction> flaggedTransactions = transactionRepository.findByIsFlaggedTrue();
         if (flaggedTransactions.isEmpty()) {
             log.info("No flagged transactions found.");
         }
-        return flaggedTransactions;
+        return new ResponseEntity<>(transactionMapper.toTransactionDtoList(flaggedTransactions),HttpStatus.OK);
     }
 
-    public List<Transaction> getTransactionsByMerchant(String merchantId) {
+    public ResponseEntity<List<TransactionDto>> getTransactionsByMerchant(String merchantId) {
         if (merchantId == null || merchantId.trim().isEmpty()) {
             throw new IllegalArgumentException("Merchant ID must not be null or empty.");
         }
@@ -110,7 +111,7 @@ public class TransactionService {
         if (merchantTransactions.isEmpty()) {
             log.info("No transactions found for merchant ID: {}", merchantId);
         }
-        return merchantTransactions;
+        return new ResponseEntity<>(transactionMapper.toTransactionDtoList(merchantTransactions),HttpStatus.OK);
     }
 
 }
