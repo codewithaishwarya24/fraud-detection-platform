@@ -148,18 +148,4 @@ public class TransactionService {
         }
         return transactionMapper.toDtoList(merchantTransactions);
     }
-
-    /* ----------------- Helpers ----------------- */
-
-    /**
-     * Basic sanitizer + truncation helper. Replace with a proper sanitizer (OWASP Java HTML Sanitizer)
-     * if you expect rich text or user-entered HTML.
-     */
-    private String sanitizeAndTruncate(String input, int maxLen) {
-        if (input == null) return null;
-        // Simple sanitization: remove control characters and trim
-        String cleaned = input.replaceAll("[\\p{Cntrl}&&[^\r\n\t]]", "").trim();
-        if (cleaned.length() <= maxLen) return cleaned;
-        return cleaned.substring(0, maxLen);
-    }
 }
