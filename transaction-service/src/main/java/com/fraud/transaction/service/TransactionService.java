@@ -1,21 +1,23 @@
 package com.fraud.transaction.service;
 
+import com.fraud.transaction.api.request.CreateTransactionRequest;
+import com.fraud.transaction.api.request.UpdateTransactionRequest;
+import com.fraud.transaction.dto.TransactionDto;
 import com.fraud.transaction.entity.Transaction;
 import com.fraud.transaction.mapper.TransactionMapper;
-import com.fraud.transaction.model.FlagTransactionRequest;
-import com.fraud.transaction.dto.TransactionDto;
+import com.fraud.transaction.api.request.FlagTransactionRequest;
 import com.fraud.transaction.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mapstruct.factory.Mappers;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,95 +25,141 @@ import java.util.Optional;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
+    private final TransactionMapper transactionMapper;
 
-    private final TransactionMapper transactionMapper = Mappers.getMapper(TransactionMapper.class);
-
+    @Transactional(readOnly = true)
     public TransactionDto getTransactionById(String transId) {
-        Transaction transaction = transactionRepository.findByTransactionId(transId);
-        if (transaction == null) {
-            throw new EntityNotFoundException("Transaction not found with id: " + transId);
+        if (!StringUtils.hasText(transId)) {
+            throw new IllegalArgumentException("transactionId must not be null or blank");
         }
+
+        Transaction transaction = transactionRepository.findByTransactionId(transId)
+                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + transId));
+
         return transactionMapper.toDto(transaction);
     }
 
-    public ResponseEntity<TransactionDto> updateTransaction(String transactionId, TransactionDto updatedTransaction) {
-        Transaction existing = transactionRepository.findByTransactionId(transactionId);
-                if(null!=existing) {
-                    existing.setAmount(updatedTransaction.getAmount());
-                    existing.setCurrency(updatedTransaction.getCurrency());
-                    existing.setMerchantId(updatedTransaction.getMerchantId());
-                    existing.setCardNumberMasked(updatedTransaction.getCardNumberMasked());
-                    existing.setCardType(updatedTransaction.getCardType());
-                    existing.setTransactionType(updatedTransaction.getTransactionType());
-                    existing.setResponseCode(updatedTransaction.getResponseCode());
-                    existing.setIsFlagged(updatedTransaction.getIsFlagged());
-                    existing.setFlagReason(updatedTransaction.getFlagReason());
-                    existing.setRiskScore(updatedTransaction.getRiskScore());
-                    existing.setReviewStatus(updatedTransaction.getReviewStatus());
-                    existing.setChannel(updatedTransaction.getChannel());
-                    existing.setIpAddress(updatedTransaction.getIpAddress());
-                    existing.setDeviceId(updatedTransaction.getDeviceId());
-                    existing.setLocation(updatedTransaction.getLocation());
-                    existing.setTransactionTime(updatedTransaction.getTransactionTime());
-                    existing.setCreatedAt(updatedTransaction.getCreatedAt());
-                    transactionRepository.save(existing);
-                    return new ResponseEntity<>(transactionMapper.toDto(existing),HttpStatus.OK);
-                }
-                else
-                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    /**
+     * Create a new transaction from a CreateTransactionRequest.
+     * - Ensures transactionId exists (generates UUID if absent)
+     * - Ensures isFlagged is not null (defaults to false)
+     * - Ensures createdAt/transactionTime are set
+     */
+    @Transactional
+    public TransactionDto createTransaction(CreateTransactionRequest createRequest) {
+        Objects.requireNonNull(createRequest, "createRequest must not be null");
 
-    }
+        Transaction entity = transactionMapper.fromCreateRequest(createRequest);
 
-    public ResponseEntity<String> createTransaction(TransactionDto transactionDto) {
-        try {
-            Transaction transaction = transactionMapper.toEntity(transactionDto);
-            transaction.setCreatedAt(LocalDateTime.now());
-            transaction.setTransactionTime(LocalDateTime.now());
-            transactionRepository.save(transaction);
-            return new ResponseEntity<>("Transaction created successfully", HttpStatus.CREATED);
-        } catch (Exception exception) {
-            exception.printStackTrace();
+        // Ensure transactionId is present (generated by server if not supplied)
+        if (!StringUtils.hasText(entity.getTransactionId())) {
+            entity.setTransactionId(UUID.randomUUID().toString());
         }
-        return new ResponseEntity<>("Failed to create transaction", HttpStatus.BAD_REQUEST);
+
+        // Ensure sensible defaults
+        if (entity.getIsFlagged() == null) {
+            entity.setIsFlagged(Boolean.FALSE);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (entity.getCreatedAt() == null) {
+            entity.setCreatedAt(now);
+        }
+        if (entity.getTransactionTime() == null) {
+            entity.setTransactionTime(now);
+        }
+
+        Transaction saved = transactionRepository.save(entity);
+        log.info("Created transaction with transactionId={}", saved.getTransactionId());
+        return transactionMapper.toDto(saved);
     }
 
-    public ResponseEntity<List<TransactionDto>> getAllTransaction() {
-        List<Transaction> transactionList = transactionRepository.findAll();
-        return new ResponseEntity<>(transactionMapper.toDtoList(transactionList), HttpStatus.OK);
+    /**
+     * Update an existing transaction with values from UpdateTransactionRequest.
+     * Uses mapper to copy allowed fields; ensures updatedAt is set server-side.
+     */
+    @Transactional
+    public TransactionDto updateTransaction(String transactionId, UpdateTransactionRequest updatedRequest) {
+        if (!StringUtils.hasText(transactionId)) {
+            throw new IllegalArgumentException("transactionId must not be null or blank");
+        }
+        Objects.requireNonNull(updatedRequest, "updatedRequest must not be null");
+
+        Transaction existing = transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + transactionId));
+
+        // Let MapStruct update the entity in-place (recommended)
+        transactionMapper.updateFromUpdateRequest(updatedRequest, existing);
+
+        // Ensure we mark the update time (server-side)
+        existing.setUpdatedAt(LocalDateTime.now());
+
+        Transaction saved = transactionRepository.save(existing);
+        log.info("Updated transaction transactionId={}", transactionId);
+        return transactionMapper.toDto(saved);
     }
 
-    public ResponseEntity<TransactionDto> flagTransaction(String transactionId, FlagTransactionRequest request) {
-        Transaction txn = Optional.of(transactionRepository.findByTransactionId(transactionId))
-                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with transaction id: " + transactionId));
+    @Transactional
+    public TransactionDto flagTransaction(String transactionId, FlagTransactionRequest request) {
+        if (!StringUtils.hasText(transactionId)) {
+            throw new IllegalArgumentException("transactionId must not be null or blank");
+        }
+        Objects.requireNonNull(request, "request must not be null");
+
+        Transaction txn = transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + transactionId));
 
         txn.setIsFlagged(true);
         txn.setFlagReason(request.getComment());
-        txn.setUpdatedAt(LocalDateTime.now());
         txn.setFlaggedAt(LocalDateTime.now());
-        txn.setFlaggedBy("system");
+        txn.setFlaggedBy("system"); // fixed for now
+        txn.setUpdatedAt(LocalDateTime.now());
 
-        Transaction updatedTxn = transactionRepository.save(txn);
-        return new ResponseEntity<>(transactionMapper.mapTransactionToTransactionDto(updatedTxn),HttpStatus.OK);
+        Transaction saved = transactionRepository.save(txn);
+        log.info("Transaction {} flagged successfully by system", transactionId);
+
+        return transactionMapper.toDto(saved);
     }
 
-    public ResponseEntity<List<TransactionDto>> getFlaggedTransactions() {
-        List<Transaction> flaggedTransactions = transactionRepository.findByIsFlaggedTrue();
-        if (flaggedTransactions.isEmpty()) {
-            log.info("No flagged transactions found.");
+    @Transactional(readOnly = true)
+    public List<TransactionDto> getAllTransactions() {
+        List<Transaction> all = transactionRepository.findAll();
+        return transactionMapper.toDtoList(all);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransactionDto> getFlaggedTransactions() {
+        List<Transaction> flagged = transactionRepository.findByIsFlaggedTrue();
+        if (flagged.isEmpty()) {
+            log.debug("No flagged transactions found.");
         }
-        return new ResponseEntity<>(transactionMapper.toTransactionDtoList(flaggedTransactions),HttpStatus.OK);
+        return transactionMapper.toDtoList(flagged);
     }
 
-    public ResponseEntity<List<TransactionDto>> getTransactionsByMerchant(String merchantId) {
-        if (merchantId == null || merchantId.trim().isEmpty()) {
+    @Transactional(readOnly = true)
+    public List<TransactionDto> getTransactionsByMerchant(String merchantId) {
+        if (!StringUtils.hasText(merchantId)) {
             throw new IllegalArgumentException("Merchant ID must not be null or empty.");
         }
-        
+
         List<Transaction> merchantTransactions = transactionRepository.findByMerchantId(merchantId);
         if (merchantTransactions.isEmpty()) {
-            log.info("No transactions found for merchant ID: {}", merchantId);
+            log.debug("No transactions found for merchant ID: {}", merchantId);
         }
-        return new ResponseEntity<>(transactionMapper.toTransactionDtoList(merchantTransactions),HttpStatus.OK);
+        return transactionMapper.toDtoList(merchantTransactions);
     }
 
+    /* ----------------- Helpers ----------------- */
+
+    /**
+     * Basic sanitizer + truncation helper. Replace with a proper sanitizer (OWASP Java HTML Sanitizer)
+     * if you expect rich text or user-entered HTML.
+     */
+    private String sanitizeAndTruncate(String input, int maxLen) {
+        if (input == null) return null;
+        // Simple sanitization: remove control characters and trim
+        String cleaned = input.replaceAll("[\\p{Cntrl}&&[^\r\n\t]]", "").trim();
+        if (cleaned.length() <= maxLen) return cleaned;
+        return cleaned.substring(0, maxLen);
+    }
 }

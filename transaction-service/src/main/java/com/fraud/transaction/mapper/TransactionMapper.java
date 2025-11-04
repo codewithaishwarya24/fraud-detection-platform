@@ -1,56 +1,43 @@
 package com.fraud.transaction.mapper;
 
-import com.fraud.transaction.entity.Transaction;
+import com.fraud.transaction.api.request.CreateTransactionRequest;
+import com.fraud.transaction.api.request.UpdateTransactionRequest;
 import com.fraud.transaction.dto.TransactionDto;
-import org.mapstruct.Mapper;
-import org.mapstruct.ReportingPolicy;
-import org.mapstruct.NullValueMappingStrategy;
-
+import com.fraud.transaction.entity.Transaction;
+import org.mapstruct.*;
 import java.util.List;
 
-/**
- * Mapper to convert between {@link Transaction} entities and {@link TransactionDto} DTOs.
- *
- * MapStruct will generate the implementation; this interface is detected by Spring
- * because componentModel = "spring".
- */
-@Mapper(
-        componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        nullValueMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT
-)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface TransactionMapper {
 
-    /**
-     * Map an entity to a DTO.
-     *
-     * @param transaction entity to map
-     * @return mapped DTO (or default DTO if {@code transaction} is null)
-     */
-    TransactionDto toDto(Transaction transaction);
+    // Entity -> DTO
+    TransactionDto toDto(Transaction entity);
 
-    /**
-     * Map a DTO to an entity.
-     *
-     * @param transactionDto dto to map
-     * @return mapped entity (or default entity if {@code transactionDto} is null)
-     */
-    Transaction toEntity(TransactionDto transactionDto);
+    List<TransactionDto> toDtoList(List<Transaction> entities);
 
-    /**
-     * Map a list of entities to a list of DTOs.
-     * MapStruct automatically handles collection mapping; this is here for clarity and explicit usage.
-     *
-     * @param transactions list of entities
-     * @return list of DTOs (empty list if input is null)
-     */
-    List<TransactionDto> toDtoList(List<Transaction> transactions);
+    // CreateRequest -> Entity
+    // transactionId, createdAt, updatedAt, flaggedAt, flaggedBy should not be supplied by client;
+    // they will be set by the service / DB, so ignore them here (no overwrite).
+    @Mappings({
+            @Mapping(target = "id", ignore = true),
+            @Mapping(target = "transactionId", ignore = true),
+            @Mapping(target = "createdAt", ignore = true),
+            @Mapping(target = "updatedAt", ignore = true),
+            @Mapping(target = "flaggedAt", ignore = true),
+            @Mapping(target = "flaggedBy", ignore = true),
+            @Mapping(target = "isFlagged", ignore = true) // service will default this if needed
+    })
+    Transaction fromCreateRequest(CreateTransactionRequest request);
 
-    /**
-     * Map a list of DTOs to a list of entities.
-     *
-     * @param dtos list of DTOs
-     * @return list of entities (empty list if input is null)
-     */
-    List<Transaction> toEntityList(List<TransactionDto> dtos);
+    // UpdateRequest -> Entity (in-place). Ignore nulls (configured at mapper level). Also avoid overwriting audit fields.
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mappings({
+            @Mapping(target = "id", ignore = true),
+            @Mapping(target = "transactionId", ignore = true),
+            @Mapping(target = "createdAt", ignore = true),
+            @Mapping(target = "updatedAt", ignore = true),
+            @Mapping(target = "flaggedAt", ignore = true),
+            @Mapping(target = "flaggedBy", ignore = true)
+    })
+    void updateFromUpdateRequest(UpdateTransactionRequest request, @MappingTarget Transaction entity);
 }

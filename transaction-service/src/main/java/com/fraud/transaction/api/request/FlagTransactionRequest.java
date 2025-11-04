@@ -1,4 +1,4 @@
-package com.fraud.transaction.model;
+package com.fraud.transaction.api.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
