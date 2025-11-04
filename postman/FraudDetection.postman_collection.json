@@ -1,0 +1,335 @@
+{
+	"info": {
+		"_postman_id": "4def7dcb-6f2d-4062-9770-edb80301cbfd",
+		"name": "FraudDetection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27676511"
+	},
+	"item": [
+		{
+			"name": "MerchantService",
+			"item": [
+				{
+					"name": "HealthCheck",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/api/transactions/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateMerchant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"merchantId\": \"MAR105\",\n  \"name\": \"Zensar\",\n  \"acquirerName\": \"ZensarBank\",\n  \"category\": \"Bank\",\n  \"domain\": \"RETAIL\",\n  \"country\": \"India\",\n  \"city\": \"Pune\",\n  \"isHighRisk\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8082/api/merchants/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"merchants",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetMerchantById",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8082/api/merchants/MAR105",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"merchants",
+								"MAR105"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "TransactionService",
+			"item": [
+				{
+					"name": "healthCheck",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/api/transactions/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateTransaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 1250.75,\n  \"currency\": \"INR\",\n  \"merchantId\": \"222\",\n  \"cardNumberMasked\": \"**** **** **** 1234\",\n  \"cardType\": \"DEBIT\",\n  \"transactionType\": \"PURCHASE\",\n  \"responseCode\": \"00\",\n  \"riskScore\": 0,\n  \"channel\": \"POS\",\n  \"ipAddress\": \"128.1.1.0\",\n  \"deviceId\": \"1122\",\n  \"location\": \"Mumbai\",\n  \"transactionTime\": \"2025-11-04T10:00:00\",\n  \"idempotencyKey\": \"optional-key-123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8081/api/transactions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions"
+							]
+						},
+						"description": "Create a transaction. Server generates transactionId, createdAt, and will set isFlagged=false by default."
+					},
+					"response": []
+				},
+				{
+					"name": "GetAllTransactions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/api/transactions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions"
+							]
+						},
+						"description": "Get list of all transactions (consider paging in production)"
+					},
+					"response": []
+				},
+				{
+					"name": "GetAllFlaggedTransactions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/api/transactions/flagged",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions",
+								"flagged"
+							]
+						},
+						"description": "Get all transactions where isFlagged = true"
+					},
+					"response": []
+				},
+				{
+					"name": "GetTransactionById",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/api/transactions/{transactionId}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions",
+								"{transactionId}"
+							],
+							"variable": [
+								{
+									"key": "transactionId",
+									"value": "replace-with-transactionId",
+									"description": "Business transaction id (UUID or system id)"
+								}
+							]
+						},
+						"description": "Get transaction by business transactionId"
+					},
+					"response": []
+				},
+				{
+					"name": "GetAllTransactionByMerchantId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/api/transactions/merchant/222",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions",
+								"merchant",
+								"222"
+							]
+						},
+						"description": "Get transactions for merchant 222 (kept as-is per request)"
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateTransactionById",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 150.75,\n  \"currency\": \"INR\",\n  \"merchantId\": \"MERCHANT001\",\n  \"cardNumberMasked\": \"**** **** **** 1234\",\n  \"cardType\": \"VISA\",\n  \"transactionType\": \"PURCHASE\",\n  \"responseCode\": \"00\",\n  \"isFlagged\": false,\n  \"flagReason\": \"\",\n  \"riskScore\": 20,\n  \"reviewStatus\": \"COMPLETED\",\n  \"channel\": \"POS\",\n  \"ipAddress\": \"192.168.2.2\",\n  \"deviceId\": \"DEVICE12345\",\n  \"location\": \"New York, USA\",\n  \"transactionTime\": \"2025-10-28T11:48:01\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8081/api/transactions/{transactionId}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions",
+								"{transactionId}"
+							],
+							"variable": [
+								{
+									"key": "transactionId",
+									"value": "replace-with-transactionId",
+									"description": "Business transaction id"
+								}
+							]
+						},
+						"description": "Full update for a transaction. Ensure only allowed fields are modified by clients."
+					},
+					"response": []
+				},
+				{
+					"name": "FlagTransactionById",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"comment\": \"Suspicious velocity detected: multiple failed attempts\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8081/api/transactions/{transactionId}/flag",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"transactions",
+								"{transactionId}",
+								"flag"
+							],
+							"variable": [
+								{
+									"key": "transactionId",
+									"value": "replace-with-transactionId",
+									"description": "Business transaction id"
+								}
+							]
+						},
+						"description": "Flag a transaction. Only `comment` is stored and flaggedBy set to system."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
