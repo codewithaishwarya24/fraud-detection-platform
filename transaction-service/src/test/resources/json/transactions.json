@@ -1,0 +1,8 @@
+{
+  "amount": 125.25,
+  "currency": "USD",
+  "merchantId": "111",
+  "cardNumberMasked": "**** **** **** 0012",
+  "transactionType": "PURCHASE",
+  "riskScore": 10
+}
