@@ -1,12 +1,14 @@
 package com.fraud.transaction.service;
 
 import com.fraud.transaction.api.request.CreateTransactionRequest;
+import com.fraud.transaction.api.request.FlagTransactionRequest;
 import com.fraud.transaction.api.request.UpdateTransactionRequest;
 import com.fraud.transaction.dto.TransactionDto;
 import com.fraud.transaction.entity.Transaction;
 import com.fraud.transaction.mapper.TransactionMapper;
 import com.fraud.transaction.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,10 +18,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class TransactionServiceTest {
@@ -32,6 +39,45 @@ public class TransactionServiceTest {
 
     @InjectMocks
     private TransactionService transactionService;
+
+    private FlagTransactionRequest request;
+    private Transaction transaction1;
+    private Transaction transaction2;
+    private TransactionDto dto1;
+    private TransactionDto dto2;
+
+
+    @BeforeEach
+    void setup() {
+        transaction1 = Transaction.builder()
+                .id(1290L)
+                .transactionId("txn-001")
+                .isFlagged(true)
+                .flaggedAt(null)
+                .flagReason(null)
+                .build();
+
+        transaction2 = Transaction.builder()
+                .id(12912L)
+                .transactionId("txn-002")
+                .isFlagged(true)
+                .build();
+
+        request = new FlagTransactionRequest();
+                request.setComment("Suspicious amount");
+
+        dto1 = TransactionDto.builder()
+                .transactionId("txn-001")
+                .isFlagged(true)
+                .build();
+
+        dto2 = TransactionDto.builder()
+                .transactionId("txn-002")
+                .isFlagged(true)
+                .build();
+    }
+
+
 
     @Test
     void shouldReturnTransactionDto_whenValidIdProvided() {
@@ -275,6 +321,135 @@ public class TransactionServiceTest {
         assertEquals("MAR101", result.get(0).getMerchantId());
         assertEquals(BigDecimal.valueOf(250.0), result.get(0).getAmount());
         assertEquals("USD", result.get(0).getCurrency());
+    }
+
+// -------------------------------------------------------
+    // Tests for getFlaggedTransactions()
+    // -------------------------------------------------------
+
+    @Test
+    void testGetFlaggedTransactions_ReturnsList_WhenFlaggedTransactionsExist() {
+        List<Transaction> flaggedList = List.of(transaction1, transaction2);
+        when(transactionRepository.findByIsFlaggedTrue()).thenReturn(flaggedList);
+        when(transactionMapper.toDtoList(flaggedList)).thenReturn(List.of(dto1, dto2));
+
+        List<TransactionDto> result = transactionService.getFlaggedTransactions();
+
+        assertEquals(2, result.size());
+        assertEquals("txn-001", result.get(0).getTransactionId());
+        verify(transactionRepository, times(1)).findByIsFlaggedTrue();
+        verify(transactionMapper, times(1)).toDtoList(flaggedList);
+    }
+
+    @Test
+    void testGetFlaggedTransactions_ReturnsEmptyList_WhenNoFlaggedTransactionsFound() {
+        when(transactionRepository.findByIsFlaggedTrue()).thenReturn(Collections.emptyList());
+        when(transactionMapper.toDtoList(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+        List<TransactionDto> result = transactionService.getFlaggedTransactions();
+
+        assertTrue(result.isEmpty());
+        verify(transactionRepository, times(1)).findByIsFlaggedTrue();
+        verify(transactionMapper, times(1)).toDtoList(Collections.emptyList());
+    }
+
+    // -------------------------------------------------------
+    // Tests for getTransactionsByMerchant()
+    // -------------------------------------------------------
+
+    @Test
+    void testGetTransactionsByMerchant_ReturnsList_WhenTransactionsExist() {
+        String merchantId = "merchant-123";
+        List<Transaction> transactions = List.of(transaction1);
+        when(transactionRepository.findByMerchantId(merchantId)).thenReturn(transactions);
+        when(transactionMapper.toDtoList(transactions)).thenReturn(List.of(dto1));
+
+        List<TransactionDto> result = transactionService.getTransactionsByMerchant(merchantId);
+
+        assertEquals(1, result.size());
+        assertEquals("txn-001", result.get(0).getTransactionId());
+        verify(transactionRepository, times(1)).findByMerchantId(merchantId);
+        verify(transactionMapper, times(1)).toDtoList(transactions);
+    }
+
+    @Test
+    void testGetTransactionsByMerchant_ReturnsEmptyList_WhenNoTransactionsFound() {
+        String merchantId = "merchant-123";
+        when(transactionRepository.findByMerchantId(merchantId)).thenReturn(Collections.emptyList());
+        when(transactionMapper.toDtoList(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+        List<TransactionDto> result = transactionService.getTransactionsByMerchant(merchantId);
+
+        assertTrue(result.isEmpty());
+        verify(transactionRepository, times(1)).findByMerchantId(merchantId);
+        verify(transactionMapper, times(1)).toDtoList(Collections.emptyList());
+    }
+
+    @Test
+    void testGetTransactionsByMerchant_ThrowsException_WhenMerchantIdIsInvalid() {
+        List<String> invalidMerchantIds = Arrays.asList(null, "", "   ");
+        for (String invalid : invalidMerchantIds) {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                    () -> transactionService.getTransactionsByMerchant(invalid));
+            assertEquals("Merchant ID must not be null or empty.", exception.getMessage());
+        }
+        verifyNoInteractions(transactionRepository);
+        verifyNoInteractions(transactionMapper);
+    }
+
+    // -------------------------------------------------------
+    // Tests for flagTransaction()
+    // -------------------------------------------------------
+
+    @Test
+    void testFlagTransaction_SuccessfullyFlagsTransaction() {
+        when(transactionRepository.findByTransactionId("txn-001"))
+                .thenReturn(Optional.of(transaction1));
+        when(transactionRepository.save(any(Transaction.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(transactionMapper.toDto(any(Transaction.class)))
+                .thenReturn(dto1);
+
+        TransactionDto result = transactionService.flagTransaction("txn-001", request);
+
+        assertNotNull(result);
+        assertEquals("txn-001", result.getTransactionId());
+        assertTrue(transaction1.getIsFlagged());
+        assertEquals("Suspicious amount", transaction1.getFlagReason());
+        assertEquals("system", transaction1.getFlaggedBy());
+        assertNotNull(transaction1.getFlaggedAt());
+        assertNotNull(transaction1.getUpdatedAt());
+    }
+
+    @Test
+    void testFlagTransaction_ThrowsException_WhenTransactionIdIsInvalid() {
+        List<String> invalidIds = Arrays.asList(null, "", "  ");
+        for (String invalid : invalidIds) {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                    () -> transactionService.flagTransaction(invalid, request));
+            assertEquals("transactionId must not be null or blank", exception.getMessage());
+        }
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void testFlagTransaction_ThrowsException_WhenRequestIsNull() {
+        NullPointerException exception = assertThrows(NullPointerException.class,
+                () -> transactionService.flagTransaction("txn-001", null));
+        assertEquals("request must not be null", exception.getMessage());
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void testFlagTransaction_ThrowsException_WhenTransactionNotFound() {
+        when(transactionRepository.findByTransactionId("txn-404")).thenReturn(Optional.empty());
+
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
+                () -> transactionService.flagTransaction("txn-404", request));
+
+        assertEquals("Transaction not found with id: txn-404", exception.getMessage());
+        verify(transactionRepository, times(1)).findByTransactionId("txn-404");
+        verify(transactionRepository, never()).save(any());
     }
 
 }
