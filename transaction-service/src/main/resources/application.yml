@@ -50,3 +50,9 @@ transaction:
   create:
     fixed:
       rate: 60000
+
+  threadPool:
+      size: 10
+
+  batch:
+    size: 10
