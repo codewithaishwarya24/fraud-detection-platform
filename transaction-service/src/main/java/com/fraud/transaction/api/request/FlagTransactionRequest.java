@@ -3,6 +3,10 @@ package com.fraud.transaction.api.request;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+/**
+ * Request payload for flagging a transaction as potentially fraudulent.
+ * This is used by the controller when an admin or system flags a transaction.
+ */
 @Data
 public class FlagTransactionRequest {
 

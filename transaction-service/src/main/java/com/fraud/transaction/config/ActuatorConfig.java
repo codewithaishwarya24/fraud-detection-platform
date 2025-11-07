@@ -11,6 +11,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class ActuatorConfig {
+    /**
+     * Custom health indicator for transaction service.
+     * Can be expanded to include checks for DB, message brokers, etc.
+     */
     @Bean
     public HealthIndicator customHealthIndicator() {
         return () -> Health.up().withDetail("service", "transaction-service").build();

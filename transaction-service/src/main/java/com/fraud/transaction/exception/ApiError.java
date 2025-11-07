@@ -9,6 +9,10 @@ import org.springframework.http.HttpStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Standardized API error response structure.
+ * Includes HTTP status, error message, path, timestamp, and optional field errors.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

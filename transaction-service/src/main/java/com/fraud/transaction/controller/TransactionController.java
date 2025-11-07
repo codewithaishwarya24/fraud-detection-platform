@@ -15,6 +15,20 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * This class is a Spring Boot REST controller for managing transactions.
+ * It provides endpoints for creating, updating, fetching, and flagging transactions.
+ *
+ * The controller handles HTTP requests and delegates the business logic to the
+ * `TransactionService`. It uses annotations to define request mappings and
+ * validation rules.
+ *
+ * Key features:
+ * - Health check endpoint.
+ * - CRUD operations for transactions.
+ * - Fetching flagged transactions.
+ * - Fetching transactions by merchant ID.
+ **/
 @RestController
 @RequestMapping("/api/transactions")
 @Validated
@@ -29,6 +43,10 @@ public class TransactionController {
 
     /**
      * Health check endpoint.
+     * This endpoint is used to verify that the transaction service is running and operational.
+     * It returns a simple string message indicating the service status.
+     *
+     * @return A string message "Transaction service running OK".
      */
     @GetMapping("/health")
     public String health() {
@@ -37,6 +55,14 @@ public class TransactionController {
 
     /**
      * Fetch a transaction by its ID.
+     *
+     * <p>Delegates to {@code TransactionService#getTransactionById(String)} to load the domain
+     * object and maps it to {@code TransactionDto} returned inside a {@code ResponseEntity}.</p>
+     *
+     * @param transactionId the identifier of the transaction to retrieve; must not be null or empty
+     * @return a {@code ResponseEntity} containing the {@code TransactionDto} for the given id
+     * @see com.fraud.transaction.service.TransactionService#getTransactionById(String)
+     * @see com.fraud.transaction.dto.TransactionDto
      */
     @GetMapping("/{transactionId}")
     public ResponseEntity<TransactionDto> getTransactionById(@PathVariable String transactionId) {
@@ -48,6 +74,15 @@ public class TransactionController {
 
     /**
      * Update an existing transaction.
+     *
+     * <p>Validates the incoming {@code UpdateTransactionRequest}, delegates the update to the
+     * service layer and returns the updated {@code TransactionDto} wrapped in a {@code ResponseEntity}.</p>
+     *
+     * @param transactionId the identifier of the transaction to update
+     * @param updatedTransaction the request payload containing updated transaction fields; validated with Jakarta Validation
+     * @return a {@code ResponseEntity} containing the updated {@code TransactionDto}
+     * @see com.fraud.transaction.api.request.UpdateTransactionRequest
+     * @see com.fraud.transaction.service.TransactionService#updateTransaction(String, com.fraud.transaction.api.request.UpdateTransactionRequest)
      */
     @PutMapping("/{transactionId}")
     public ResponseEntity<TransactionDto> updateTransaction(
@@ -62,7 +97,16 @@ public class TransactionController {
 
     /**
      * Create a new transaction.
-     * Returns 201 Created with Location header.
+     *
+     * <p>Validates the incoming {@code CreateTransactionRequest}, creates the transaction via the
+     * service, and returns a 201 Created response with the created {@code TransactionDto} and a
+     * Location header pointing to the new resource.</p>
+     *
+     * @param transactionDto the request payload used to create a new transaction; validated with Jakarta Validation
+     * @return a {@code ResponseEntity} with status 201 Created containing the created {@code TransactionDto}
+     * @see com.fraud.transaction.api.request.CreateTransactionRequest
+     * @see com.fraud.transaction.service.TransactionService#createTransaction(com.fraud.transaction.api.request.CreateTransactionRequest)
+     * @see org.springframework.web.servlet.support.ServletUriComponentsBuilder
      */
     @PostMapping
     public ResponseEntity<TransactionDto> createTransaction(@Valid @RequestBody CreateTransactionRequest transactionDto) {
@@ -81,6 +125,13 @@ public class TransactionController {
 
     /**
      * Fetch all transactions.
+     *
+     * <p>Returns a list of all transactions as {@code TransactionDto} objects wrapped in a
+     * {@code ResponseEntity}.</p>
+     *
+     * @return a {@code ResponseEntity} containing a {@code List} of {@code TransactionDto}
+     * @see com.fraud.transaction.service.TransactionService#getAllTransactions()
+     * @see com.fraud.transaction.dto.TransactionDto
      */
     @GetMapping
     public ResponseEntity<List<TransactionDto>> getAllTransactions() {
@@ -92,6 +143,15 @@ public class TransactionController {
 
     /**
      * Flag a transaction as suspicious.
+     *
+     * <p>flags a specified transaction using the details in {@code FlagTransactionRequest},
+     * delegating to the service layer and returning the flagged {@code TransactionDto}.</p>
+     *
+     * @param transactionId the identifier of the transaction to flag
+     * @param request the flagging request containing reason/metadata; validated with Jakarta Validation
+     * @return a {@code ResponseEntity} containing the flagged {@code TransactionDto}
+     * @see com.fraud.transaction.api.request.FlagTransactionRequest
+     * @see com.fraud.transaction.service.TransactionService#flagTransaction(String, com.fraud.transaction.api.request.FlagTransactionRequest)
      */
     @PatchMapping("/{transactionId}/flag")
     public ResponseEntity<TransactionDto> flagTransaction(
@@ -107,6 +167,12 @@ public class TransactionController {
 
     /**
      * Fetch all flagged transactions.
+     *
+     * <p>Returns all transactions that have been marked as flagged/suspicious.</p>
+     *
+     * @return a {@code ResponseEntity} containing a {@code List} of flagged {@code TransactionDto}
+     * @see com.fraud.transaction.service.TransactionService#getFlaggedTransactions()
+     * @see com.fraud.transaction.dto.TransactionDto
      */
     @GetMapping("/flagged")
     public ResponseEntity<List<TransactionDto>> getFlaggedTransactions() {
@@ -118,6 +184,13 @@ public class TransactionController {
 
     /**
      * Fetch transactions by merchant ID.
+     *
+     * <p>Returns transactions associated with the provided merchant identifier.</p>
+     *
+     * @param merchantId the merchant identifier used to filter transactions
+     * @return a {@code ResponseEntity} containing a {@code List} of {@code TransactionDto} for the merchant
+     * @see com.fraud.transaction.service.TransactionService#getTransactionsByMerchant(String)
+     * @see com.fraud.transaction.dto.TransactionDto
      */
     @GetMapping("/merchant/{merchantId}")
     public ResponseEntity<List<TransactionDto>> getByMerchant(@PathVariable String merchantId) {

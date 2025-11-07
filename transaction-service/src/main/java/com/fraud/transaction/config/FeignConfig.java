@@ -11,6 +11,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class FeignConfig {
+    /**
+     * Configure Feign client logging level.
+     * Adjust level based on needs: NONE, BASIC, HEADERS, FULL.
+     */
     @Bean
     public Logger.Level feignLoggerLevel() {
         // NONE, BASIC, HEADERS, FULL

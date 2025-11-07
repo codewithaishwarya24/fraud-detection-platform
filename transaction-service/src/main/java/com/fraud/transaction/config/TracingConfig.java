@@ -12,6 +12,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class TracingConfig {
+    /**
+     * Customize Micrometer MeterRegistry to add common tags.
+     */
     @Bean
     MeterRegistryCustomizer<MeterRegistry> metricsCommonTags() {
         return registry -> registry.config().commonTags("service", "transaction-service");
