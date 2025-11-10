@@ -1,8 +1,8 @@
 server:
-  port: 8081
+  port: 8082
 spring:
   application:
-    name: transaction-service
+    name: merchant-service
   datasource:
     url: jdbc:postgresql://localhost:5433/frauddb
     username: fraud_user
