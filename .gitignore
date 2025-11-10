@@ -1,0 +1,8 @@
+# Ignore class, jar, lst, and other build files
+*.class
+*.jar
+*.lst
+target/
+build/
+out/
+.idea/
