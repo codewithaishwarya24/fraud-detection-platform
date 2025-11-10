@@ -1,13 +1,21 @@
 server:
   port: 8081
+
 spring:
   application:
     name: transaction-service
+
   datasource:
     url: jdbc:postgresql://localhost:5433/frauddb
     username: fraud_user
     password: fraud_pass
     driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
 
   jpa:
     hibernate:
@@ -17,3 +25,34 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+    consumer:
+      group-id: transaction-group-id
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.fraud.transaction.api.request.CreateTransactionRequest
+
+logging:
+  level:
+    org.flywaydb.core: DEBUG
+
+transaction:
+  create:
+    fixed:
+      rate: 60000
+
+  threadPool:
+      size: 10
+
+  batch:
+    size: 10
