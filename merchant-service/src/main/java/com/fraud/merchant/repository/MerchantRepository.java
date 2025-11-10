@@ -2,5 +2,13 @@ package com.fraud.merchant.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.fraud.merchant.entity.Merchant;
+import org.springframework.stereotype.Repository;
 
-public interface MerchantRepository extends JpaRepository<Merchant, Long> {}
+import java.util.List;
+
+@Repository
+public interface MerchantRepository extends JpaRepository<Merchant, Long> {
+    boolean existsByMerchantId(String merchantId);
+
+    Merchant findMerchantsByMerchantId(String merchantId);
+}
