@@ -2,7 +2,10 @@ package com.fraud.transaction.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,6 +15,9 @@ import java.time.LocalDateTime;
  * Fields that are system-managed are marked read-only (ignored during deserialization).
  */
 @Data
+@AllArgsConstructor
+@Builder
+@NoArgsConstructor
 public class TransactionDto {
 
     /**

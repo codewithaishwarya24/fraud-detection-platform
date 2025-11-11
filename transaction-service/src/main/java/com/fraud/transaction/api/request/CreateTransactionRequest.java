@@ -1,6 +1,8 @@
 package com.fraud.transaction.api.request;
 
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
  * are not part of this request.
  */
 @Data
+@AllArgsConstructor
+@Builder
 public class CreateTransactionRequest {
 
     @NotNull(message = "Amount is required")
@@ -42,7 +46,8 @@ public class CreateTransactionRequest {
     private String channel;
 
     @Pattern(
-            regexp = "^$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",
+//            regexp = "^$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",
+            regexp = "^$|^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$",
             message = "Invalid IP address format"
     )
     private String ipAddress;
