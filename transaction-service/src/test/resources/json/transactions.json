@@ -1,0 +1,9 @@
+{
+  "transactionId": "tx001",
+  "amount": 125.25,
+  "currency": "USD",
+  "merchantId": "MAR101",
+  "cardNumberMasked": "**** **** **** 0012",
+  "transactionType": "PURCHASE",
+  "riskScore": 10
+}

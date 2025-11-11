@@ -1,0 +1,12 @@
+[
+  {
+    "transactionId": "txn1",
+    "merchantId": "merchant123",
+    "amount": 100.0
+  },
+  {
+    "transactionId": "txn2",
+    "merchantId": "merchant123",
+    "amount": 200.0
+  }
+]

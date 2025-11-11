@@ -1,6 +1,7 @@
 package com.fraud.transaction.api.request;
 
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
  * controller/service enforce which fields are updatable.
  */
 @Data
+@Builder
 public class UpdateTransactionRequest {
 
     @NotNull(message = "Amount is required")
@@ -48,7 +50,8 @@ public class UpdateTransactionRequest {
     private String channel;
 
     @Pattern(
-            regexp = "^$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",
+           /* regexp = "^$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",*/
+            regexp = "^$|^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$",
             message = "Invalid IP address format"
     )
     private String ipAddress;
