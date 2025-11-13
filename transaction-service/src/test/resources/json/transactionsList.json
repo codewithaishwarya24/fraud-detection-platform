@@ -6,7 +6,8 @@
     "merchantId": "MAR101",
     "cardNumberMasked": "**** **** **** 0012",
     "transactionType": "PURCHASE",
-    "riskScore": 10
+    "riskScore": 10,
+    "isFlagged": "true"
   },
   {
     "transactionId": "tx002",
@@ -15,6 +16,7 @@
     "merchantId": "MAR101",
     "cardNumberMasked": "**** **** **** 0012",
     "transactionType": "PURCHASE",
-    "riskScore": 10
+    "riskScore": 10,
+    "isFlagged": "true"
   }
 ]

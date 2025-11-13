@@ -451,4 +451,64 @@ public class TransactionServiceTest {
         verify(transactionRepository, times(1)).findByTransactionId("txn-404");
         verify(transactionRepository, never()).save(any());
     }
+
+    @Test
+    void testCreateTransaction_CreatedAtNullValue(){
+        CreateTransactionRequest request = CreateTransactionRequest.builder()
+                .amount(BigDecimal.valueOf(125.25))
+                .currency("USD")
+                .merchantId("MAR101")
+                .cardNumberMasked("**** **** **** 0012")
+                .transactionType("PURCHASE")
+                .riskScore(10)
+                .build();
+
+        Transaction entity = new Transaction();
+        entity.setAmount(request.getAmount());
+        entity.setCurrency(request.getCurrency());
+        entity.setMerchantId(request.getMerchantId());
+        entity.setCardNumberMasked(request.getCardNumberMasked());
+        entity.setTransactionType(request.getTransactionType());
+        entity.setRiskScore(request.getRiskScore());
+        entity.setCreatedAt(null);
+        entity.setTransactionTime(null);
+        // transactionId, createdAt, transactionTime, isFlagged will be set in service
+
+        Transaction savedEntity = new Transaction();
+        savedEntity.setTransactionId("tx123");
+        savedEntity.setAmount(entity.getAmount());
+        savedEntity.setCurrency(entity.getCurrency());
+        savedEntity.setMerchantId(entity.getMerchantId());
+        savedEntity.setCardNumberMasked(entity.getCardNumberMasked());
+        savedEntity.setTransactionType(entity.getTransactionType());
+        savedEntity.setRiskScore(entity.getRiskScore());
+        savedEntity.setIsFlagged(Boolean.FALSE);
+        savedEntity.setCreatedAt(LocalDateTime.now());
+        savedEntity.setTransactionTime(LocalDateTime.now());
+
+        TransactionDto expectedDto = TransactionDto.builder()
+                .transactionId("tx123")
+                .amount(savedEntity.getAmount())
+                .currency(savedEntity.getCurrency())
+                .merchantId(savedEntity.getMerchantId())
+                .cardNumberMasked(savedEntity.getCardNumberMasked())
+                .transactionType(savedEntity.getTransactionType())
+                .riskScore(savedEntity.getRiskScore())
+                .build();
+
+        Mockito.when(transactionMapper.fromCreateRequest(request)).thenReturn(entity);
+        Mockito.when(transactionRepository.save(Mockito.any(Transaction.class))).thenReturn(savedEntity);
+        Mockito.when(transactionMapper.toDto(savedEntity)).thenReturn(expectedDto);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(request);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("tx123", result.getTransactionId());
+        assertEquals("MAR101", result.getMerchantId());
+        assertEquals(BigDecimal.valueOf(125.25), result.getAmount());
+        assertEquals("USD", result.getCurrency());
+
+    }
 }
