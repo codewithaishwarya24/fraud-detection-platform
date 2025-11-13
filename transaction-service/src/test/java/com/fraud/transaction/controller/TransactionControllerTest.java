@@ -16,13 +16,16 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -53,7 +56,7 @@ class TransactionControllerTest {
                 .transactionId(transactionId)
                 .build();
 
-        Mockito.when(transactionService.getTransactionById(transactionId)).thenReturn(transactionDto);
+        when(transactionService.getTransactionById(transactionId)).thenReturn(transactionDto);
 
         // Act & Assert
         mockMvc.perform(get("/api/transactions/{id}", transactionId))
@@ -83,7 +86,7 @@ class TransactionControllerTest {
                 .riskScore(createTransactionRequest.getRiskScore())
                 .build();
 
-        Mockito.when(transactionService.createTransaction(any())).thenReturn(createdTransactionDto);
+        when(transactionService.createTransaction(any())).thenReturn(createdTransactionDto);
 
         mockMvc.perform(post("/api/transactions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,7 +116,7 @@ class TransactionControllerTest {
                 .riskScore(request.getRiskScore())
                 .build();
 
-        Mockito.when(transactionService.updateTransaction(eq(transactionId), any()))
+        when(transactionService.updateTransaction(eq(transactionId), any()))
                 .thenReturn(transactionDto);
 
         mockMvc.perform(put("/api/transactions/{id}", transactionId)
@@ -130,20 +133,14 @@ class TransactionControllerTest {
     @Test
     void getAllTransactions_shouldReturnList() throws Exception {
         // Arrange
-        TypeReference<TransactionDto> typeReference = new TypeReference<>() {};
-        InputStream inputStream = TypeReference.class.getResourceAsStream("/json/transactions.json");
-        assertNotNull(inputStream, "File not found: /json/transactions.json");
-        TransactionDto transaction = objectMapper.readValue(inputStream, typeReference);
-
-        List<TransactionDto> transactionsList = List.of(transaction);
-
-        Mockito.when(transactionService.getAllTransactions()).thenReturn(transactionsList);
+        List<TransactionDto> transactionsList = getTransactionDtoList();
+        when(transactionService.getAllTransactions()).thenReturn(transactionsList);
 
         // Act & Assert
         mockMvc.perform(get("/api/transactions"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$").isNotEmpty())
                 //   .andExpect(jsonPath("$[0].transactionId").value("tx001"))
                 .andExpect(jsonPath("$[0].merchantId").value("MAR101"))
@@ -157,14 +154,9 @@ class TransactionControllerTest {
     void testGetByMerchant_returnsTransactionList() throws Exception {
         // Given
         String merchantId = "MAR101";
+        List<TransactionDto> merchantsList = getTransactionDtoList();
 
-        TypeReference<List<TransactionDto>> typeReference = new TypeReference<>() {};
-        InputStream inputStream = getClass().getResourceAsStream("/json/transactionsList.json");
-        assertNotNull(inputStream, "File not found: /json/transactionsList.json");
-
-        List<TransactionDto> merchantsList = objectMapper.readValue(inputStream, typeReference);
-
-        Mockito.when(transactionService.getTransactionsByMerchant(merchantId))
+        when(transactionService.getTransactionsByMerchant(merchantId))
                 .thenReturn(merchantsList);
 
         // When & Then
@@ -176,11 +168,12 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[0].merchantId").value("MAR101"))
                 .andExpect(jsonPath("$[0].amount").value(125.25));
     }
+
     @Test
     void testGetByMerchant_returnsEmptyList() throws Exception {
         // Given
         String merchantId = "merchant456";
-        Mockito.when(transactionService.getTransactionsByMerchant(merchantId))
+        when(transactionService.getTransactionsByMerchant(merchantId))
                 .thenReturn(Collections.emptyList());
 
         // When & Then
@@ -202,7 +195,7 @@ class TransactionControllerTest {
         //flaggedDto.setFlagged(true);
         flaggedDto.setFlagReason("Suspicious activity");
 
-        Mockito.when(transactionService.flagTransaction(eq(transactionId), any(FlagTransactionRequest.class)))
+        when(transactionService.flagTransaction(eq(transactionId), any(FlagTransactionRequest.class)))
                 .thenReturn(flaggedDto);
 
         // When & Then
@@ -214,6 +207,41 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.transactionId").value("txn123"))
                 // .andExpect(jsonPath("$.flagged").value(true))
                 .andExpect(jsonPath("$.flagReason").value("Suspicious activity"));
+    }
+
+    @Test
+    void testGetFlaggedTransactions_ReturnsList() throws Exception {
+
+        TransactionDto tx1 = new TransactionDto();
+        tx1.setTransactionId("TXN001");
+        tx1.setIsFlagged(true); // ✅ fine
+        tx1.setAmount(BigDecimal.valueOf(100.0));
+
+        // Arrange
+        when(transactionService.getFlaggedTransactions()).thenReturn(List.of(tx1));
+
+        // Act & Assert
+        mockMvc.perform(get("/api/transactions/flagged")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].isFlagged").value(true));
+    }
+
+    @Test
+    void testGetFlaggedTransactions_EmptyList() throws Exception {
+        when(transactionService.getFlaggedTransactions()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/transactions/flagged"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+    }
+
+    private List<TransactionDto> getTransactionDtoList() throws IOException {
+        TypeReference<List<TransactionDto>> typeReference = new TypeReference<>() {};
+        InputStream inputStream = getClass().getResourceAsStream("/json/transactionsList.json");
+        assertNotNull(inputStream, "File not found: /json/transactionsList.json");
+
+        return objectMapper.readValue(inputStream, typeReference);
     }
 
 }
