@@ -1,6 +1,10 @@
 package com.fraud.transaction.exception;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +18,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.Collections;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -99,5 +104,34 @@ public class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().getMessage()).isEqualTo("Internal server error");
+    }
+
+    @Test
+    void testHandleConstraintViolation_ShouldReturnBadRequestWithFieldErrors() {
+        // Arrange
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/api/test");
+
+        Path mockPath = mock(Path.class);
+        when(mockPath.toString()).thenReturn("fieldName");
+
+        @SuppressWarnings("unchecked")
+        ConstraintViolation<Object> violation = mock(ConstraintViolation.class);
+        when(violation.getPropertyPath()).thenReturn(mockPath);
+        when(violation.getMessage()).thenReturn("must not be blank");
+
+        ConstraintViolationException ex = new ConstraintViolationException(Set.of(violation));
+
+        // Act
+        ResponseEntity<ApiError> response = exceptionHandler.handleConstraintViolation(ex, request);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getMessage())
+                .isEqualTo("Validation failed for request parameters");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/test");
+        assertThat(response.getBody().getFieldErrors())
+                .containsExactly("fieldName: must not be blank");
     }
 }
