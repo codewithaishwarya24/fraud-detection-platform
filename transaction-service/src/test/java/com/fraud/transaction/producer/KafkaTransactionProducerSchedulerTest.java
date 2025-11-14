@@ -18,7 +18,12 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class KafkaTransactionProducerSchedulerTest {
@@ -86,14 +91,14 @@ public class KafkaTransactionProducerSchedulerTest {
 
         kafkaTransactionProducerScheduler.produceScheduledTransaction();
 
-        Mockito.verify(kafkaTransactionEventProducer, Mockito.times(2))
-                .createTransaction(Mockito.any(CreateTransactionRequest.class));
+        verify(kafkaTransactionEventProducer, Mockito.times(2))
+                .createTransaction(any(CreateTransactionRequest.class));
     }
 
     @Test
     void testGetTransactionRequestSeedSuccess() throws Exception {
 
-        Mockito.when(objectMapper.readValue(Mockito.any(InputStream.class), Mockito.any(TypeReference.class)))
+        Mockito.when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class)))
                 .thenReturn(Collections.emptyList());
 
         List<CreateTransactionRequest> result = kafkaTransactionProducerScheduler.getTransactionRequestSeed();
@@ -104,11 +109,54 @@ public class KafkaTransactionProducerSchedulerTest {
     @Test
     void testGetTransactionRequestSeedFailure() throws Exception {
 
-        Mockito.when(objectMapper.readValue(Mockito.any(InputStream.class), Mockito.any(TypeReference.class)))
+        Mockito.when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class)))
                 .thenThrow(new RuntimeException("JSON parse error"));
 
         List<CreateTransactionRequest> result = kafkaTransactionProducerScheduler.getTransactionRequestSeed();
 
         Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testGetTransactionRequestSeed_WhenJsonParseFails_ShouldReturnEmptyList() throws Exception {
+        // Arrange
+        //InputStream mockInputStream = TypeReference.class.getResourceAsStream("/json/seedData/transactions.json");
+        // Force ObjectMapper to throw an exception
+        doThrow(new RuntimeException("JSON parsing failed"))
+                .when(objectMapper)
+                .readValue(any(InputStream.class), any(TypeReference.class));
+
+        // Act
+        List<CreateTransactionRequest> result = kafkaTransactionProducerScheduler.getTransactionRequestSeed();
+
+        // Assert
+        assertThat(result).isEqualTo(Collections.emptyList());
+    }
+
+    @Test
+    void testShutdownExecutor_ShouldCallShutdown() {
+        // Arrange
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+        // Inject mock executor via reflection since it's private and initialized in initExecutor()
+        injectExecutor(kafkaTransactionProducerScheduler, mockExecutor);
+
+        // Act
+        kafkaTransactionProducerScheduler.shutdownExecutor();
+
+        // Assert
+        verify(mockExecutor, times(1)).shutdown();
+    }
+
+    /**
+     * Utility method to inject mock ExecutorService into the private 'executor' field.
+     */
+    private void injectExecutor(KafkaTransactionProducerScheduler scheduler, ExecutorService executor) {
+        try {
+            var field = KafkaTransactionProducerScheduler.class.getDeclaredField("executor");
+            field.setAccessible(true);
+            field.set(scheduler, executor);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
